@@ -87,7 +87,7 @@ CRp.bufferCanvasImage = function( options, cy){
       buffCxt.translate( -bb.x1 * scale, -bb.y1 * scale );
       buffCxt.scale( scale, scale );
 
-      renderer.drawElements( buffCxt, zsortedEles );
+      processElements(options, renderer, buffCxt, zsortedEles);
 
       buffCxt.scale( 1/scale, 1/scale );
       buffCxt.translate( bb.x1 * scale, bb.y1 * scale );
@@ -104,7 +104,7 @@ CRp.bufferCanvasImage = function( options, cy){
       buffCxt.translate( translation.x, translation.y );
       buffCxt.scale( scale, scale );
 
-      renderer.drawElements( buffCxt, zsortedEles );
+      processElements(options, renderer, buffCxt, zsortedEles);
 
       buffCxt.scale( 1/scale, 1/scale );
       buffCxt.translate( -translation.x, -translation.y );
@@ -119,6 +119,55 @@ CRp.bufferCanvasImage = function( options, cy){
 
 function output(canvas){
     return canvas.getSerializedSvg();
+}
+
+function processElements(options, renderer, buffCxt, zsortedEles) {
+    var parent = buffCxt.__root && buffCxt.__root.childNodes && buffCxt.__root.childNodes[1] ? buffCxt.__root.childNodes[1] : buffCxt.__root;
+
+    zsortedEles.forEach(function (element) {
+        try {
+            if (options.useId || options.useClasses) {
+                var g = buffCxt.__createElement("g");
+                try {
+                    if (element && typeof element.id === "function") {
+                        if (options.useId) {
+                            // apply id if available
+                            g.setAttribute("id", element.id());
+                        }
+                        if (options.useClasses) {
+                            // apply classes if available
+                            g.setAttribute("class", element.classes().join(' '))
+                        }
+                    } else if (element && element._private && element._private.data && element._private.data.id) {
+                        if (options.useId) {
+                            // apply id if available
+                            g.setAttribute("id", element._private.data.id);
+                        }
+                        if (options.useClasses) {
+                            // apply classes if available
+                            g.setAttribute("class", element.classes().join(' '))
+                        }
+                    }
+                } catch (err) {
+                    /* ignore class extraction errors */
+                }
+                parent.appendChild(g);
+                var prevCurrent = buffCxt.__currentElement;
+                buffCxt.__currentElement = g;
+            }
+
+            // draw the element using the renderer's single-element draw path
+            renderer.drawElement(buffCxt, element);
+
+            if (options.useId || options.useClasses) {
+                buffCxt.__currentElement = prevCurrent;
+            }
+        } catch (err) {
+            try {
+                buffCxt.__currentElement = buffCxt.__root.childNodes[1] || buffCxt.__root;
+            } catch (e2) { }
+        }
+    })
 }
 
 CRp.svg = function( options ){

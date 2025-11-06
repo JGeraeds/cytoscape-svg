@@ -61,6 +61,8 @@ cy.svg(options)
     * **full**: Whether to export the current viewport view (false, default) or the entire graph (true).
     * **scale**: This value specifies a positive number that scales the size of the resultant image.
     * **bg**: The background color of the SVG (transparent by default).
+    * **useId**: keep the id's from nodes within the svg
+    * **useClasses**: keep the classes from nodes within the svg
 
 
 ## Build targets
